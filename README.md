@@ -1,4 +1,4 @@
-# daichi_firebase_test
+# simple_chat_app
 
 A new Flutter application.
 
