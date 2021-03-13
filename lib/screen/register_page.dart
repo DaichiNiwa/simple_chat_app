@@ -14,7 +14,7 @@ final FirebaseAuth _auth = FirebaseAuth.instance;
 class RegisterPage extends StatefulWidget {
   static const String id = 'register_page';
   /// The page title.
-  final String title = '新規会員登録';
+  final String title = '新規登録';
 
   @override
   State<StatefulWidget> createState() => _RegisterPageState();

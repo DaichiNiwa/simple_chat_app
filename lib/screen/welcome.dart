@@ -21,7 +21,7 @@ class WelcomePage extends StatelessWidget {
             child: SignInButtonBuilder(
               icon: Icons.person_add,
               backgroundColor: Colors.indigo,
-              text: '登録',
+              text: '新規登録',
               onPressed: () =>
                 Navigator.pushNamed(context, RegisterPage.id),
             ),

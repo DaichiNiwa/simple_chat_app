@@ -6,9 +6,11 @@
 
 // ignore_for_file: deprecated_member_use
 
+import 'package:daichi_firebase_test/screen/chat.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_signin_button/flutter_signin_button.dart';
+
 
 final FirebaseAuth _auth = FirebaseAuth.instance;
 
@@ -16,7 +18,7 @@ final FirebaseAuth _auth = FirebaseAuth.instance;
 class SignInPage extends StatefulWidget {
   static const String id = 'signin_page';
   /// The page title.
-  final String title = 'Sign In & Out';
+  final String title = 'ログイン';
 
   @override
   State<StatefulWidget> createState() => _SignInPageState();
@@ -44,10 +46,10 @@ class _SignInPageState extends State<SignInPage> {
 
                 final String uid = user.uid;
                 Scaffold.of(context).showSnackBar(SnackBar(
-                  content: Text('$uid has successfully signed out.'),
+                  content: Text('$uid ログアウトしました。'),
                 ));
               },
-              child: const Text('Sign out'),
+              child: const Text('ログアウト'),
             );
           })
         ],
@@ -92,23 +94,23 @@ class _EmailPasswordFormState extends State<_EmailPasswordForm> {
                 Container(
                   alignment: Alignment.center,
                   child: const Text(
-                    'Sign in with email and password',
+                    'Eメールとパスワードを入力してください。',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
                 TextFormField(
                   controller: _emailController,
-                  decoration: const InputDecoration(labelText: 'Email'),
+                  decoration: const InputDecoration(labelText: 'Eメール'),
                   validator: (String value) {
-                    if (value.isEmpty) return 'Please enter some text';
+                    if (value.isEmpty) return '入力してください。';
                     return null;
                   },
                 ),
                 TextFormField(
                   controller: _passwordController,
-                  decoration: const InputDecoration(labelText: 'Password'),
+                  decoration: const InputDecoration(labelText: 'パスワード'),
                   validator: (String value) {
-                    if (value.isEmpty) return 'Please enter some text';
+                    if (value.isEmpty) return '入力してください。';
                     return null;
                   },
                   obscureText: true,
@@ -118,7 +120,7 @@ class _EmailPasswordFormState extends State<_EmailPasswordForm> {
                   alignment: Alignment.center,
                   child: SignInButton(
                     Buttons.Email,
-                    text: 'Sign In',
+                    text: 'ログイン',
                     onPressed: () async {
                       if (_formKey.currentState.validate()) {
                         await _signInWithEmailAndPassword();
@@ -148,15 +150,19 @@ class _EmailPasswordFormState extends State<_EmailPasswordForm> {
       ))
           .user;
 
+      if (user != null) {
+        Navigator.pushNamed(context, ChatPage.id);
+      }
+
       Scaffold.of(context).showSnackBar(
         SnackBar(
-          content: Text('${user.email} signed in'),
+          content: Text('${user.email} でログインしました。'),
         ),
       );
     } catch (e) {
       Scaffold.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Failed to sign in with Email & Password'),
+          content: Text('ログインに失敗しました。'),
         ),
       );
     }
