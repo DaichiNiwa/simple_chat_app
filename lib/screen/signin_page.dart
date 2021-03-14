@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_signin_button/flutter_signin_button.dart';
 
+import './users.dart';
 
 final FirebaseAuth _auth = FirebaseAuth.instance;
 
@@ -151,7 +152,7 @@ class _EmailPasswordFormState extends State<_EmailPasswordForm> {
           .user;
 
       if (user != null) {
-        Navigator.pushNamed(context, ChatPage.id);
+        Navigator.pushNamed(context, UsersPage.id);
       }
 
       Scaffold.of(context).showSnackBar(

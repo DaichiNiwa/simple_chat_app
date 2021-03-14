@@ -9,6 +9,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_signin_button/button_builder.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import './users.dart';
+
 final _db = FirebaseFirestore.instance;
 final FirebaseAuth _auth = FirebaseAuth.instance;
 
@@ -132,6 +134,8 @@ class _RegisterPageState extends State<RegisterPage> {
         _success = true;
         _userEmail = user.email;
       });
+
+      Navigator.pushNamed(context, UsersPage.id);
     } else {
       _success = false;
     }
