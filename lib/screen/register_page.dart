@@ -7,7 +7,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_signin_button/button_builder.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
+final _db = FirebaseFirestore.instance;
 final FirebaseAuth _auth = FirebaseAuth.instance;
 
 /// Entrypoint example for registering via Email/Password.
@@ -22,6 +24,7 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
@@ -42,6 +45,16 @@ class _RegisterPageState extends State<RegisterPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
+                  TextFormField(
+                    controller: _nameController,
+                    decoration: const InputDecoration(labelText: 'ニックネーム'),
+                    validator: (String value) {
+                      if (value.isEmpty) {
+                        return '入力してください。';
+                      }
+                      return null;
+                    },
+                  ),
                   TextFormField(
                     controller: _emailController,
                     decoration: const InputDecoration(labelText: 'Eメール'),
@@ -95,6 +108,7 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   void dispose() {
     // Clean up the controller when the Widget is disposed
+    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -108,6 +122,12 @@ class _RegisterPageState extends State<RegisterPage> {
     ))
         .user;
     if (user != null) {
+      _db.collection('users').add({
+        'name': _nameController.text,
+        'email': user.email,
+        'created_at': FieldValue.serverTimestamp(),
+      });
+
       setState(() {
         _success = true;
         _userEmail = user.email;
