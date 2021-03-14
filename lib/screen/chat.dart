@@ -68,7 +68,7 @@ class _ChatPageState extends State<ChatPage> {
                   FlatButton(
                     onPressed: () {
                       messageTextController.clear();
-                      _db.collection('message').add({
+                      _db.collection('messages').add({
                         'text': messageText,
                         'sender': _user.email,
                         'time': FieldValue.serverTimestamp(),
