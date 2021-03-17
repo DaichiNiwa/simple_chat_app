@@ -125,10 +125,10 @@ class _RegisterPageState extends State<RegisterPage> {
     ))
         .user;
     if (user != null) {
-      int lastUserId = await getLatestUserId();// 必ずID: 1のユーザーが最初に用意されている必要がある
+      int latestUserId = await getLatestUserId();// 必ずID: 1のユーザーが最初に用意されている必要がある
 
       _db.collection('users').add({
-        'user_id': ++lastUserId,
+        'user_id': ++latestUserId,
         'name': _nameController.text,
         'email': user.email,
         'created_at': FieldValue.serverTimestamp(),
