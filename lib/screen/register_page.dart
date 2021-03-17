@@ -17,6 +17,7 @@ final FirebaseAuth _auth = FirebaseAuth.instance;
 /// Entrypoint example for registering via Email/Password.
 class RegisterPage extends StatefulWidget {
   static const String id = 'register_page';
+
   /// The page title.
   final String title = '新規登録';
 
@@ -97,8 +98,8 @@ class _RegisterPageState extends State<RegisterPage> {
                     child: Text(_success == null
                         ? ''
                         : (_success
-                        ? '登録が完了しました。Eメール:  $_userEmail'
-                        : '登録に失敗しました。')),
+                            ? '登録が完了しました。Eメール:  $_userEmail'
+                            : '登録に失敗しました。')),
                   )
                 ],
               ),
@@ -124,7 +125,10 @@ class _RegisterPageState extends State<RegisterPage> {
     ))
         .user;
     if (user != null) {
+      int lastUserId = await getLatestUserId();// 必ずID: 1のユーザーが最初に用意されている必要がある
+
       _db.collection('users').add({
+        'user_id': ++lastUserId,
         'name': _nameController.text,
         'email': user.email,
         'created_at': FieldValue.serverTimestamp(),
@@ -139,5 +143,19 @@ class _RegisterPageState extends State<RegisterPage> {
     } else {
       _success = false;
     }
+  }
+
+  Future<int> getLatestUserId() async {
+    var int;
+    await _db
+        .collection('users')
+        .orderBy('created_at', descending: true)
+        .limit(1)
+        .get()
+        .then((QuerySnapshot querySnapshot) {
+      int = querySnapshot.docs.first.get('user_id');
+    });
+
+    return int;
   }
 }
