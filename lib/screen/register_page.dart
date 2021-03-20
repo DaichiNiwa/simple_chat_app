@@ -7,12 +7,17 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_signin_button/button_builder.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
+import './users.dart';
+
+final _db = FirebaseFirestore.instance;
 final FirebaseAuth _auth = FirebaseAuth.instance;
 
 /// Entrypoint example for registering via Email/Password.
 class RegisterPage extends StatefulWidget {
   static const String id = 'register_page';
+
   /// The page title.
   final String title = '新規登録';
 
@@ -22,6 +27,7 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
@@ -42,6 +48,16 @@ class _RegisterPageState extends State<RegisterPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
+                  TextFormField(
+                    controller: _nameController,
+                    decoration: const InputDecoration(labelText: 'ニックネーム'),
+                    validator: (String value) {
+                      if (value.isEmpty) {
+                        return '入力してください。';
+                      }
+                      return null;
+                    },
+                  ),
                   TextFormField(
                     controller: _emailController,
                     decoration: const InputDecoration(labelText: 'Eメール'),
@@ -82,8 +98,8 @@ class _RegisterPageState extends State<RegisterPage> {
                     child: Text(_success == null
                         ? ''
                         : (_success
-                        ? '登録が完了しました。Eメール:  $_userEmail'
-                        : '登録に失敗しました。')),
+                            ? '登録が完了しました。Eメール:  $_userEmail'
+                            : '登録に失敗しました。')),
                   )
                 ],
               ),
@@ -95,6 +111,7 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   void dispose() {
     // Clean up the controller when the Widget is disposed
+    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -108,12 +125,37 @@ class _RegisterPageState extends State<RegisterPage> {
     ))
         .user;
     if (user != null) {
+      int latestUserId = await getLatestUserId();// 必ずID: 1のユーザーが最初に用意されている必要がある
+
+      _db.collection('users').add({
+        'user_id': ++latestUserId,
+        'name': _nameController.text,
+        'email': user.email,
+        'created_at': FieldValue.serverTimestamp(),
+      });
+
       setState(() {
         _success = true;
         _userEmail = user.email;
       });
+
+      Navigator.pushNamed(context, UsersPage.id);
     } else {
       _success = false;
     }
+  }
+
+  Future<int> getLatestUserId() async {
+    var userId;
+    await _db
+        .collection('users')
+        .orderBy('created_at', descending: true)
+        .limit(1)
+        .get()
+        .then((QuerySnapshot querySnapshot) {
+      userId = querySnapshot.docs.first.get('user_id');
+    });
+
+    return userId;
   }
 }

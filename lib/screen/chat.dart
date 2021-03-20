@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import './users.dart';
+
 final _db = FirebaseFirestore.instance;
 final _auth = FirebaseAuth.instance;
-User _user;
+User _me;
 
 class ChatPage extends StatefulWidget {
   static const String id = 'chat_screen';
-  final String title = 'おしゃべり';
 
   @override
   _ChatPageState createState() => _ChatPageState();
@@ -22,11 +23,16 @@ class _ChatPageState extends State<ChatPage> {
   void initState() {
     super.initState();
 
-    _user = _auth.currentUser;
+    _me = _auth.currentUser;
   }
-
+  
   @override
   Widget build(BuildContext context) {
+    final UsersArguments arguments = ModalRoute.of(context).settings.arguments;
+    final _meUserId = arguments.meUserId;
+    final roomName =
+        getRoomName(meUserId: _meUserId, partnerUserId: arguments.partnerUserId);
+
     return Scaffold(
       appBar: AppBar(
         leading: null,
@@ -38,7 +44,7 @@ class _ChatPageState extends State<ChatPage> {
                 Navigator.pop(context);
               })
         ],
-        title: Text(widget.title),
+        title: Text(arguments.partnerName),
         backgroundColor: Colors.lightBlueAccent,
       ),
       body: SafeArea(
@@ -46,7 +52,10 @@ class _ChatPageState extends State<ChatPage> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            MessageStream(),
+            MessageStream(
+              meUserId: _meUserId,
+              roomName: roomName,
+            ),
             Container(
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -68,9 +77,13 @@ class _ChatPageState extends State<ChatPage> {
                   FlatButton(
                     onPressed: () {
                       messageTextController.clear();
-                      _db.collection('messages').add({
+                      _db
+                          .collection('rooms')
+                          .doc('roomNames')
+                          .collection(roomName)
+                          .add({
                         'text': messageText,
-                        'sender': _user.email,
+                        'sender_id': _meUserId,
                         'time': FieldValue.serverTimestamp(),
                       });
                     },
@@ -91,16 +104,31 @@ class _ChatPageState extends State<ChatPage> {
       ),
     );
   }
+
+  String getRoomName({int meUserId, int partnerUserId}) {
+    if (meUserId > partnerUserId) {
+      return '$meUserId _ $partnerUserId';
+    }
+
+    return '$partnerUserId _ $meUserId';
+  }
 }
 
 class MessageStream extends StatelessWidget {
+  int meUserId;
+  String roomName;
+
+  MessageStream({this.meUserId, this.roomName});
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
       stream: _db
-          .collection('messages')
+          .collection('rooms')
+          .doc('roomNames')
+          .collection(roomName)
           .orderBy('time', descending: true)
-          .limit(50)
+          .limit(100)
           .snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
@@ -116,12 +144,11 @@ class MessageStream extends StatelessWidget {
         for (var message in messages) {
           final Map<String, dynamic> doc = message.data();
           final messageText = doc['text'];
-          final messageSender = doc['sender'];
+          final messageSenderId = doc['sender_id'];
 
           final messageLine = MessageLine(
             text: messageText,
-            sender: messageSender,
-            isMine: _user.email == messageSender,
+            isMine: meUserId == messageSenderId,
           );
 
           messageLines.add(messageLine);
@@ -138,11 +165,10 @@ class MessageStream extends StatelessWidget {
 }
 
 class MessageLine extends StatelessWidget {
-  final String sender;
   final String text;
   final bool isMine;
 
-  MessageLine({this.sender, this.text, this.isMine});
+  MessageLine({this.text, this.isMine});
 
   @override
   Widget build(BuildContext context) {
@@ -152,13 +178,6 @@ class MessageLine extends StatelessWidget {
         crossAxisAlignment:
             isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: <Widget>[
-          Text(
-            sender,
-            style: TextStyle(
-              fontSize: 12.0,
-              color: Colors.black54,
-            ),
-          ),
           Material(
             borderRadius: isMine
                 ? BorderRadius.only(
