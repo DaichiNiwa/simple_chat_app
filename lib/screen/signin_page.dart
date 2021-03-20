@@ -6,12 +6,12 @@
 
 // ignore_for_file: deprecated_member_use
 
-import 'package:daichi_firebase_test/screen/chat.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_signin_button/flutter_signin_button.dart';
 
 import './users.dart';
+import './chat.dart';
 
 final FirebaseAuth _auth = FirebaseAuth.instance;
 
