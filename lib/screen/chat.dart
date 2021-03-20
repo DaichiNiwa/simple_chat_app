@@ -25,10 +25,13 @@ class _ChatPageState extends State<ChatPage> {
 
     _me = _auth.currentUser;
   }
-
+  
   @override
   Widget build(BuildContext context) {
-    final UsersArguments _receiver = ModalRoute.of(context).settings.arguments;
+    final UsersArguments arguments = ModalRoute.of(context).settings.arguments;
+    final _meUserId = arguments.meUserId;
+    final roomName =
+        getRoomName(meUserId: _meUserId, partnerUserId: arguments.partnerUserId);
 
     return Scaffold(
       appBar: AppBar(
@@ -41,7 +44,7 @@ class _ChatPageState extends State<ChatPage> {
                 Navigator.pop(context);
               })
         ],
-        title: Text(_receiver.name),
+        title: Text(arguments.partnerName),
         backgroundColor: Colors.lightBlueAccent,
       ),
       body: SafeArea(
@@ -50,8 +53,8 @@ class _ChatPageState extends State<ChatPage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             MessageStream(
-              meEmail: _me.email,
-              receiverEmail: _receiver.email,
+              meUserId: _meUserId,
+              roomName: roomName,
             ),
             Container(
               child: Row(
@@ -74,10 +77,13 @@ class _ChatPageState extends State<ChatPage> {
                   FlatButton(
                     onPressed: () {
                       messageTextController.clear();
-                      _db.collection('messages').add({
+                      _db
+                          .collection('rooms')
+                          .doc('roomNames')
+                          .collection(roomName)
+                          .add({
                         'text': messageText,
-                        'sender': _me.email,
-                        'receiver': _receiver.email,
+                        'sender_id': _meUserId,
                         'time': FieldValue.serverTimestamp(),
                       });
                     },
@@ -98,20 +104,29 @@ class _ChatPageState extends State<ChatPage> {
       ),
     );
   }
+
+  String getRoomName({int meUserId, int partnerUserId}) {
+    if (meUserId > partnerUserId) {
+      return '$meUserId _ $partnerUserId';
+    }
+
+    return '$partnerUserId _ $meUserId';
+  }
 }
 
 class MessageStream extends StatelessWidget {
-  String meEmail;
-  String receiverEmail;
+  int meUserId;
+  String roomName;
 
-  MessageStream({this.meEmail, this.receiverEmail});
+  MessageStream({this.meUserId, this.roomName});
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
       stream: _db
-          .collection('messages')
-          .where('sender', isEqualTo: meEmail)
+          .collection('rooms')
+          .doc('roomNames')
+          .collection(roomName)
           .orderBy('time', descending: true)
           .limit(100)
           .snapshots(),
@@ -129,16 +144,11 @@ class MessageStream extends StatelessWidget {
         for (var message in messages) {
           final Map<String, dynamic> doc = message.data();
           final messageText = doc['text'];
-          final messageSender = doc['sender'];
-          final messageReciver = doc['receiver'];
-
-          // if (messageReciver != receiverEmail ) {
-          //
-          // }
+          final messageSenderId = doc['sender_id'];
 
           final messageLine = MessageLine(
             text: messageText,
-            isMine: _me.email == messageSender,
+            isMine: meUserId == messageSenderId,
           );
 
           messageLines.add(messageLine);

@@ -146,16 +146,16 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Future<int> getLatestUserId() async {
-    var int;
+    var userId;
     await _db
         .collection('users')
         .orderBy('created_at', descending: true)
         .limit(1)
         .get()
         .then((QuerySnapshot querySnapshot) {
-      int = querySnapshot.docs.first.get('user_id');
+      userId = querySnapshot.docs.first.get('user_id');
     });
 
-    return int;
+    return userId;
   }
 }

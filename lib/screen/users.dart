@@ -58,7 +58,7 @@ class UserStream extends StatelessWidget {
       stream: _db
           .collection('users')
           .where('email', isNotEqualTo: _me.email)
-          .snapshots(), // TODO: 自分を除外する
+          .snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return Center(
@@ -72,12 +72,12 @@ class UserStream extends StatelessWidget {
         List<UserLine> userLines = [];
         for (var user in users) {
           final Map<String, dynamic> doc = user.data();
+          final userId = doc['user_id'];
           final userName = doc['name'];
-          final userEmail = doc['email'];
 
           final userLine = UserLine(
+            userId: userId,
             name: userName,
-            email: userEmail,
           );
 
           userLines.add(userLine);
@@ -93,10 +93,10 @@ class UserStream extends StatelessWidget {
 }
 
 class UserLine extends StatelessWidget {
+  final int userId;
   final String name;
-  final String email;
 
-  UserLine({this.name, this.email});
+  UserLine({this.userId, this.name});
 
   @override
   Widget build(BuildContext context) {
@@ -117,20 +117,37 @@ class UserLine extends StatelessWidget {
               ),
             ],
           )),
-      onTap: () {
+      onTap: () async {
+        int _meUserId = await fetchMeUserId();
         Navigator.pushNamed(context, ChatPage.id, arguments: UsersArguments(
-            name: name,
-            email: email
+            meUserId: _meUserId,
+            partnerUserId: userId,
+            partnerName: name
         ));
       },
     );
   }
+
+  Future<int> fetchMeUserId() async {
+    int userId;
+    await _db
+        .collection('users')
+        .where('email', isEqualTo: _me.email)
+        .limit(1)
+        .get()
+        .then((QuerySnapshot querySnapshot) {
+      userId = querySnapshot.docs.first.get('user_id');
+    });
+
+    return userId;
+  }
 }
 
 class UsersArguments {
-  UsersArguments({this.name, this.email});
+  UsersArguments({this.meUserId, this.partnerUserId, this.partnerName});
 
-  final String name;
-  final String email;
+  final int meUserId;
+  final int partnerUserId;
+  final String partnerName;
 }
 
